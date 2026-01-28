@@ -3,8 +3,6 @@
 #include <MFRC522.h>
 #include <U8glib.h>
 
-// DU FÅR 3D PRINTA EN TYP BARREL TILL SKJUT SLANGEN SÅ ATT DEN PEKAR NERÅT OCH INTE SKJUTER SKIT ÖVERALLT. TACK I FÖRHAND.
-
 Servo sweepServo;   // servo 1 radar
 Servo doorServo;    // servo 2 dörr
 Servo fireServo;    // servo 3 eld
@@ -46,6 +44,8 @@ void setup() {
   fireServo.write(90);
 }
 
+String currentScreenMsg = "";
+
 void loop() {
   // RFID KOD START
   if (mfrc522.PICC_IsNewCardPresent() && mfrc522.PICC_ReadCardSerial()) {
@@ -57,23 +57,14 @@ void loop() {
         mfrc522.uid.uidByte[3] == whiteTag[3]) {
       
       Serial.println("ÖPPNAR DÖRR");
-      u8g.firstPage();  
-        do {
-          u8g.setFont(u8g_font_helvB12);
-          u8g.drawStr(20,36, "Dorr Oppen");
-        } while( u8g.nextPage() );
+      updateScreen("Dorr Oppen");
       doorServo.write(60); // Öppna
       delay(5000);         // Vänta 5 sek
       doorServo.write(0);  // Stäng
     } else {
       Serial.println("FEL KORT!!!");
     }
-
-    u8g.firstPage();  
-      do {
-        u8g.setFont(u8g_font_helvB12);
-        u8g.drawStr(20,36, "Skanna tagg");
-      } while( u8g.nextPage() );
+    updateScreen("Skanna tagg");
     mfrc522.PICC_HaltA();
     mfrc522.PCD_StopCrypto1();
   }
@@ -100,9 +91,10 @@ void loop() {
     }
   }
 
-  if (value < 100) {
+  if (value < 200) {
     fireServo.write(pos); // den sitter åt fel håll så måste köra motsatta värdet
     Serial.print("ELD!!!! pos:");
+    updateScreen("BRAND!!!");
     Serial.println(pos);
 
     doorServo.write(60);
@@ -113,7 +105,7 @@ void loop() {
     digitalWrite(7, HIGH);
     delay(100);
     digitalWrite(7, LOW);
-    tone(2, random(2000,4000));
+    tone(2, random(3000,4000));
     digitalWrite(6, HIGH);
     delay(100);
     digitalWrite(6, LOW);
@@ -145,8 +137,33 @@ void loop() {
     // doorServo.write(pos);
     Serial.println(pos);
     }
-    Serial.println(pos);
+
+    updateScreen("Skanna tagg");
+    
+  }
+  delay(25);
+
+}
+
+void updateScreen(const char* msg) {
+  // If the message is already on the screen, do nothing and return immediately!
+  if (String(msg) == currentScreenMsg) {
+    return; 
   }
 
-  delay(25);
+  currentScreenMsg = String(msg); // Remember the new message
+  u8g.firstPage();
+  do {
+    u8g.setFont(u8g_font_helvB12);
+    u8g.drawStr(20, 36, msg);
+  } while (u8g.nextPage());
 }
+
+
+// void updateScreen(const char* msg) {
+//   u8g.firstPage();
+//   do {
+//     u8g.setFont(u8g_font_helvB12);
+//     u8g.drawStr(20, 36, msg);
+//   } while (u8g.nextPage());
+// }
