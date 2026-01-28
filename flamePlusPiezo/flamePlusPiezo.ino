@@ -1,3 +1,11 @@
+/*
+* Name: Yasirs Brandsäkerhetssystem 1000
+* Author: Yasir Abu Al Chay
+* Date: 2026-01-28
+* Description: Ett säkerhetssystem med brandlarm och RFID-lås. Om en eld skulle uppstå startas en vattenpump, larm och en servo styrd släckning.
+* Systemet innehåller även en OLED skärm för status och sweep funktion för övervakning
+*/
+
 #include <Servo.h>
 #include <SPI.h>
 #include <MFRC522.h>
