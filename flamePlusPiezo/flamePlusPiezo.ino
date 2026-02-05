@@ -6,6 +6,7 @@
 * Systemet innehåller även en OLED skärm för status och sweep funktion för övervakning
 */
 
+// Include Libraries
 #include <Servo.h>
 #include <SPI.h>
 #include <MFRC522.h>
@@ -20,6 +21,7 @@ U8GLIB_SSD1306_128X64 u8g(U8G_I2C_OPT_NO_ACK);
 MFRC522 mfrc522(10, 9); // SDA=10 RST=9
 
 // SERVO SAKER RÖR EJ!!!!
+// Global variables
 int pos = 90;
 int sweep = 3;
 int sistaValue = 0;
@@ -35,27 +37,36 @@ void setup() {
   pinMode(6, OUTPUT); // led blå
   pinMode(8, OUTPUT); // dörr servo
   pinMode(4, OUTPUT); // pump relay
-  pinMode(3, INPUT_PULLUP); // servo toogel
+  pinMode(3, INPUT_PULLUP); // servo toggle knapp
   pinMode(2, OUTPUT); // piezo
+  // Init communication
   Serial.begin(9600);
   
-  SPI.begin();        // Behövs för RFID
-  mfrc522.PCD_Init(); // Behövs för RFID
+  SPI.begin();        // RFID
+  mfrc522.PCD_Init(); // RFID
 
-  doorServo.attach(A1); // dörr tror jag
+  doorServo.attach(A1); // dörr servo
   doorServo.write(0);
 
-  sweepServo.attach(8); // sweep tror jag
+  sweepServo.attach(8); // sweep servo
   sweepServo.write(pos);
   
-  fireServo.attach(5); // eld
+  fireServo.attach(5); // eld servo
   fireServo.write(90);
 }
 
+
+// Variabel som skickar en tom sträng till updateScreen så att skrämen inte visar prickar överallt
 String currentScreenMsg = "";
 
+
+/*
+*This function runs repeatedly. It does RFID and fire detection
+*Parameters: Void
+*Returns: Void
+*/
 void loop() {
-  // RFID KOD START
+  // RFID kod ====================================================
   if (mfrc522.PICC_IsNewCardPresent() && mfrc522.PICC_ReadCardSerial()) {
     Serial.println("JAG SER KORTET");
     
@@ -66,9 +77,9 @@ void loop() {
       
       Serial.println("ÖPPNAR DÖRR");
       updateScreen("Dorr Oppen");
-      doorServo.write(60); // Öppna
-      delay(5000);         // Vänta 5 sek
-      doorServo.write(0);  // Stäng
+      doorServo.write(60);
+      delay(5000);
+      doorServo.write(0);
     } else {
       Serial.println("FEL KORT!!!");
     }
@@ -76,13 +87,13 @@ void loop() {
     mfrc522.PICC_HaltA();
     mfrc522.PCD_StopCrypto1();
   }
-  // RFID KOD SLUT
+  // ==================================================
 
   int value = analogRead(A0);
   Serial.println(value);
   sistaValue = value;
 
-  // servo toggel
+  // servo toggle knapp
   if (digitalRead(3) == LOW) {
     servo_on = !servo_on;
 
@@ -100,7 +111,7 @@ void loop() {
   }
 
   if (value < 200) {
-    fireServo.write(pos); // den sitter åt fel håll så måste köra motsatta värdet
+    fireServo.write(pos);
     Serial.print("ELD!!!! pos:");
     updateScreen("BRAND!!!");
     Serial.println(pos);
@@ -121,7 +132,7 @@ void loop() {
     digitalWrite(4, HIGH); // pump på
     sistaPos = pos;
     // servo_on = false;
-    delay(3000); // 3 sek
+    delay(3000);
     digitalWrite(4, LOW); // pump av
     delay(2000);
     fireServo.write(90);
@@ -153,13 +164,13 @@ void loop() {
 
 }
 
+/*
+*This function takes a string as input and displays the string on the OLED display
+*Parameters: msg - const char* message to display
+*Returns: void
+*/
 void updateScreen(const char* msg) {
-  // If the message is already on the screen, do nothing and return immediately!
-  if (String(msg) == currentScreenMsg) {
-    return; 
-  }
-
-  currentScreenMsg = String(msg); // Remember the new message
+  currentScreenMsg = String(msg); 
   u8g.firstPage();
   do {
     u8g.setFont(u8g_font_helvB12);
@@ -167,11 +178,3 @@ void updateScreen(const char* msg) {
   } while (u8g.nextPage());
 }
 
-
-// void updateScreen(const char* msg) {
-//   u8g.firstPage();
-//   do {
-//     u8g.setFont(u8g_font_helvB12);
-//     u8g.drawStr(20, 36, msg);
-//   } while (u8g.nextPage());
-// }
